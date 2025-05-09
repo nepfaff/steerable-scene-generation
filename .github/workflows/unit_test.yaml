@@ -1,0 +1,36 @@
+name: Unit Test
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 8 * * *'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10.12
+          cache: pip
+        env:
+          AGENT_TOOLSDIRECTORY: /opt/hostedtoolcache
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      - name: Install with Poetry
+        run: poetry install
+      - name: Run unit tests
+        run: poetry run python -m unittest discover -s ./tests/unit -p 'test_*.py'

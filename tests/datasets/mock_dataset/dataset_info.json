@@ -1,0 +1,22 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "scenes": {
+      "feature": {
+        "feature": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "_type": "Sequence"
+      },
+      "_type": "Sequence"
+    },
+    "language_annotation": {
+      "dtype": "string",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": ""
+}

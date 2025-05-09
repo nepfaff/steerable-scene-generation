@@ -1,0 +1,12 @@
+defaults:
+  - scene_diffuser_base_continous
+
+# See FluxMusic for reasonable configs:
+# https://github.com/feizc/FluxMusic/blob/main/constants.py
+model:
+  hidden_dim: 512
+  mlp_ratio: 4
+  num_single_layers: 10
+  num_double_layers: 5
+  num_heads: 16
+  head_dim: 32 # Dim per attention head, can be null for hidden_dim // num_heads

@@ -1,0 +1,18 @@
+defaults:
+  - scene_diffuser_base_mixed
+
+# Configs from DiffuScene:
+# https://github.com/tangjiapeng/DiffuScene/blob/master/config/text/diffusion_bedrooms_instancond_lat32_v_bert.yaml
+model:
+  dim: 512
+  dim_mults: [1, 1, 1, 1]
+  self_condition: true
+  context_dim: 0
+  instanclass_dim: 128
+  merge_bbox: true
+  modulate_time_context_instanclass: true
+  text_dim: 512
+
+  # Added by us for mixed diffusion.
+  embedding_dim: 256
+  concatenate_input_features: false

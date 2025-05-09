@@ -1,0 +1,169 @@
+defaults:
+  - base_pytorch_algo # inherits from configurations/algorithm/base_algo.yaml
+
+# Dataset specific attributes
+translation_vec_len: ${dataset.translation_vec_len}
+rotation_parametrization: ${dataset.rotation_parametrization}
+model_path_vec_len: ${dataset.model_path_vec_len}
+max_num_objects_per_scene: ${dataset.max_num_objects_per_scene}
+processed_scene_data_path: ${dataset.processed_scene_data_path}
+drake_package_maps: ${dataset.drake_package_maps}
+static_directive: ${dataset.static_directive}
+
+trainer: "mixed" # One of "ddpm", "mixed", "rl_score", "rl_ppo"
+
+lr: ${experiment.training.lr}
+lr_scheduler: ${experiment.lr_scheduler}
+reset_lr_scheduler: ${experiment.reset_lr_scheduler}
+weight_decay: ${experiment.training.weight_decay}
+max_epochs: ${experiment.training.max_epochs}
+
+loss:
+  use_separate_loss_per_object_attribute: True
+  # The following are only used when use_separate_loss_per_object_attribute is True
+  object_translation_attribute_weight: 1.0
+  object_rotation_attribute_weight: 1.0
+  object_model_attribute_weight: 1.0
+
+# Continuous noise scheduler.
+noise_schedule:
+  scheduler: "ddpm" # "ddpm" or "ddim"
+  num_train_timesteps: 1000
+  beta_schedule: "linear"
+  ddim:
+    num_inference_timesteps: 50
+    eta: 1.0 # Amount of noise to add (1.0 = full noise, corresponds to DDPM)
+
+# Whether to sample scenes with more objects than are present in the dataset. This is
+# useful for RL post-training or inference-time search to produce scenes that are
+# significantly outside of the training distribution.
+num_additional_tokens_for_sampling: 0
+
+# Exponential Moving Average for model weights.
+ema:
+  use: True
+  log_at_train: False # This is very slow and should only be used for debugging!
+  update_after_step: 0.0
+  inv_gamma: 1.0
+  power: 0.75
+  min_value: 0.0
+  max_value: 0.9999
+
+classifier_free_guidance:
+  use: True
+  txt_encoder: "bert" # "t5", "clip", "bert"
+  txt_encoder_size: "base" # Affects T5 and bert
+  txt_encoder_coarse: null # Can be null
+  txt_encoder_coarse_size: "" # Affects T5 and bert
+  max_length: 110 # Used for T5 and bert, max number of input tokens
+  masking_prob: 0.1 # Probability of masking the text conditioning
+  masking_prob_coarse: 0.1 # Probability of masking the coarse text conditioning
+  weight: -1.0 # w=0 is conditional, w=-1 is unconditional, w>0 is CFG
+  sampling: # Test-time sampling
+    use_data_labels: False # Use data labels for sampling
+    # Labels to use for sampling. Only used if `use_data_labels` is False.
+    labels: "A scene with 10 objects." # str | list[str]
+
+# Recommended to disable during training and enable during test.
+postprocessing:
+  apply_non_penetration_projection: False
+  apply_forward_simulation: False
+  num_workers: 100
+  return_original_scenes_on_failure: False
+  non_penetration_projection:
+    translation_only: True
+    influence_distance: 0.03 # Try to increase if the projection fails
+    solver_name: "snopt" # "snopt" or "ipopt"
+    iteration_limit: 5000
+    # return_original_scenes_on_failure takes precedence.
+    discard_failed_projection_scenes: True
+  forward_simulation:
+    simulation_time_s: 2.5
+    time_step: 1.0e-3
+    timeout_s: 180.0 # Simulation timeout in seconds
+
+sample_metrics:
+  compute_scene_distance_between_samples: False
+  duplicate_distance_theshold: 1.0e-3
+  compute_scene_penetration: False
+  batch_size: 100 # Reduce this when getting OOM during sample metric computation.
+  num_workers: 100 # Number of workers for metric computation.
+
+visualization:
+  # Whether to send render requests to a Blender server. Options are:
+  # https://github.com/RobotLocomotion/drake-blender for direct image renders
+  # https://github.com/nepfaff/drake-blender-recorder for Blender exports
+  # Set `num_workers` to 1 if using a Blender server.
+  use_blender_server: False
+  blender_server_url: "http://127.0.0.1:8000"
+  visualize_proximity: False
+  weld_objects: True
+  camera_pose:
+    tri_table:
+      xyz: [0.0, 0.0, 1.5]
+      rpy: [-3.14, 0.0, 1.57]
+    dimsum_table:
+      xyz: [0.0, 0.0, 1.7]
+      rpy: [-3.14, 0.0, 1.57]
+    shelf:
+      xyz: [1.2, 0.0, 0.1]
+      rpy: [0.0, -1.57, 0.0]
+    room:
+      xyz: [0.0, 0.0, 13.0]
+      rpy: [-3.14, 0.0, 1.57]
+  image_width: 640
+  image_height: 480
+  background_color: [1.0, 1.0, 1.0]
+  num_workers: 100 # Number of workers for visualization if supported.
+
+  visualize_intermediate_scenes: False
+  num_intermediate_scenes_to_visualize: 5
+
+test:
+  use_ema: True # Whether to use the EMA model for sampling. This requires `ema.use=True`.
+  num_samples_to_render: 50 # RGBA image
+  num_samples_to_render_as_label: 0 # Semantic images
+  num_samples_to_visualize: 0 # Interactive meshcat HTML
+  num_directives_to_generate: 0 # Drake directives for simulation
+  num_samples_to_save_as_pickle: 0
+  sample_batch_size: Null # Set to a number to sample in batches
+validation:
+  num_samples_to_render: 1 # RGBA image
+  num_samples_to_visualize: 0 # Interactive meshcat HTML
+  num_directives_to_generate: 0 # Drake directives for simulation
+  num_samples_to_compute_physical_feasibility_metrics_for: 100
+  sample_batch_size: Null # Set to a number to sample in batches
+
+predict:
+  do_sample: True
+  do_rearrange: False
+  do_complete: False
+  do_inference_time_search: False
+  do_sample_scenes_with_k_closest_training_examples: False
+
+  inference_time_search:
+    use_non_penetration_objective: False
+    use_physical_feasibility_objective: False
+    use_object_number_objective: True
+    max_steps: 1000
+    non_penetration:
+      threshold: -1.0e-3 # Allow 1mm penetration.
+    physical_feasibility:
+      use_sim: True
+      sim_duration: 0.1
+      sim_time_step: 1.0e-3
+      sim_translation_threshold: 1.0e-3
+      sim_rotation_threshold: 1.0e-2
+      static_equilibrium_distance_threshold: 1.0e-3 # 1mm
+      # It makes sense to include welded objects in the masking for scenes with multiple
+      # welded objects (e.g., restaurant scenes).
+      exclude_welded_objects_from_non_penetration_masking: True
+    mcts:
+      branching_factor: 3
+      exploration_weight: 1.4
+      # Don't add a child if it is identical to the parent.
+      only_consider_children_with_different_mask: False
+
+  sample_scenes_with_k_closest_training_examples:
+    num_k: 3
+    batch_size: 50000

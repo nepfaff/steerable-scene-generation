@@ -1,0 +1,10 @@
+defaults:
+  - scene_diffuser_base
+
+auxiliary_loss:
+  weight: 5.e-4
+  adaptive: True # Whether to scale the loss differently based on the timestep.
+
+discrete_sampling:
+  # Whether sampled noise is all [mask] tokens. Otherwise, random tokens are sampled.
+  use_all_mask_as_noise: True

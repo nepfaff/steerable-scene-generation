@@ -1,0 +1,43 @@
+defaults:
+  - scene_diffuser_base
+
+# Note: DDIM scheduler is recommended for RL training to prevent OOM problems.
+ddpo:
+  use_non_penetration_reward: False
+  use_object_number_reward: False
+  use_prompt_following_reward: False
+  use_physical_feasible_objects_reward: False
+  # The RL batch size, independent of the one specified in the experiment config.
+  batch_size: 32
+  # Only compute policy gradients on the last n timesteps. Set to 0 to use all timesteps.
+  # Note that this requires `DDPStrategy(find_unused_parameters=True)` for distributed
+  # training.
+  last_n_timesteps_only: 0
+  # Uniformly sample this many timesteps for gradient computation. Set to 0 to use all
+  # timesteps. Mutually exclusive with last_n_timesteps_only. Note that this requires
+  # `DDPStrategy(find_unused_parameters=True)` for distributed training.
+  n_timesteps_to_sample: 0
+  advantage_max: 5.0 # Maximum advantage value
+  num_reward_workers: 1
+  ppo:
+    num_epochs: 4 # Number of updates before sampling new data
+    clip_range: 1e-4
+  # The total loss is rl_loss + ddpm_reg_weight * ddpm_loss.
+  # See https://arxiv.org/abs/2401.12244 for this regularization technique. Note that
+  # this uses the batch size specified in the experiment config.
+  ddpm_reg_weight: 500.0
+  # Used when `use_physical_feasible_objects_reward` is True.
+  physical_feasibility:
+    non_penetration_threshold: -1.0e-3 # Allow 1mm penetration.
+    use_sim: True
+    sim_duration: 0.1
+    sim_time_step: 1.0e-3
+    sim_translation_threshold: 1.0e-3
+    sim_rotation_threshold: 1.0e-2
+    static_equilibrium_distance_threshold: 1.0e-3 # 1mm
+
+# Whether to only diffuse over the continuous/ discrete part while taking the other part
+# from the dataset.
+continuous_discrete_only:
+  continuous_only: False
+  discrete_only: False

@@ -1,0 +1,15 @@
+defaults:
+  - scene_diffuser_base_continous
+
+# Configs from MiDiffusion:
+# https://github.com/MIT-SPARK/MiDiffusion/blob/main/config/bedrooms_mixed.yaml
+model:
+  seperate_all: True
+  n_layer: 8
+  n_embd: 512
+  n_head: 4
+  dim_feedforward: 2048
+  dropout: 0.1
+  activate: 'GELU'
+  timestep_type: 'adalayernorm_abs'
+  mlp_type: 'fc'

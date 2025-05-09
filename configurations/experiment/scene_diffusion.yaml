@@ -1,0 +1,46 @@
+defaults:
+  - base_pytorch
+
+tasks: [training]
+
+matmul_precision: "high" # Use "medium" for fast dev
+
+lr_scheduler:
+  name: "cosine"
+  num_warmup_steps: 5000
+  # Whether to use epochs or training steps as lr steps.
+  epochs_as_steps: ${equal:${experiment.training.max_steps},-1}
+
+# Whether to reset the LR scheduler when resuming training.
+reset_lr_scheduler: False
+
+# override corresponding fields in base_pytorch
+training:
+  precision: 32 # Use "bf16-mixed" for fast dev
+  compile: False
+  lr: 2.0e-4
+  weight_decay: 1.0e-3
+  batch_size: 256
+  max_epochs: -1
+  max_steps: 200001
+  pin_memory: True
+  prefetch_factor: 10
+  checkpointing:
+    every_n_train_steps: 10000
+    every_n_epochs: null
+    save_top_k: 100
+    monitor: "validation/loss" # "validation/mean_reward"
+    mode: "min" # "max"
+  optim:
+    gradient_clip_val: 1.0
+validation:
+  precision: 32 # Use "bf16-mixed" for fast dev
+  val_every_n_step: 5000
+  val_every_n_epoch: null
+  batch_size: 256
+  prefetch_factor: 5
+test:
+  precision: 32 # Use "bf16-mixed" for fast dev
+  batch_size: 256
+  limit_batch: 1
+  inference_mode: False # TODO: Only set to False if require grad

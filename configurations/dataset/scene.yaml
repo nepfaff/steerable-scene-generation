@@ -1,0 +1,75 @@
+defaults:
+  - base_dataset
+
+# Dataset specific attributes
+# Can set `processed_scene_data_path` to the metadata json path if only want to sample.
+# Note that this is only supported for the predict step.
+processed_scene_data_path: "data/breakfast_table_high_clutter_60k_objNum_oneHotUnnormalized"
+model_path_vec_len: 15 # Number of unique objects in table scene + [empty] object. Must be None for fixed scenes.
+max_num_objects_per_scene: 22
+translation_vec_len: 3
+rotation_parametrization: procrustes
+drake_package_maps: # Optional package map for resolving the mesh paths.
+  - package_name: "tri"
+    package_file_path: "data/tri/package.xml"
+  - package_name: "gazebo"
+    package_file_path: "data/gazebo/package.xml"
+  - package_name: "greg"
+    package_file_path: "data/greg/package.xml"
+# Optional static directive file for the scene, containing welded objects.
+static_directive: null
+
+# Whether to randomly shuffle the object order.
+use_permutation_augmentation: False
+
+# Whether to copy the entire dataset into memory.
+keep_dataset_in_memory: False
+
+# Classifier-free guidance config that specifies the tokenizer.
+classifier_free_guidance: ${algorithm.classifier_free_guidance}
+
+# Option to mix batches according to the following probabilities.
+custom_data_batch_mix:
+  use: False
+  label_probs: # Fist entry corresponds to label=0 and so on. Must sum up to one.
+    - 0.5
+    - 0.5
+
+# Option to sample from subdatasets with specified probabilities.
+# This can be used when the dataset is a combination of multiple subdatasets.
+subdataset_sampling:
+  use: False
+  # Use more efficient infinite iterators for subdataset sampling. This allows more
+  # efficient I/O when the dataset is large.
+  use_infinite_iterators: True
+  # Size of the shuffle buffer for infinite iterators.
+  buffer_size: 2048
+  # Dictionary mapping subdataset names to sampling probabilities.
+  # Must sum to 1.0 and include all subdataset names.
+  probabilities: {}
+  # Example:
+  # probabilities:
+  #   breakfast: 0.5
+  #   dinner: 0.3
+  #   lunch: 0.2
+
+# Whether to use the same static prompt per subdataset. This will replace the dataset
+# prompts in the dataloader. It is useful for evaluating whether co-training improves
+# performance on a target domain as it enables sampling from only the target domain.
+static_subdataset_prompts:
+  use: False
+  name_to_prompt: {}
+  # Example:
+  # name_to_prompt:
+  #   breakfast: "Breakfast."
+  #   dinner: "Dinner."
+  #   lunch: "Lunch."
+
+# Whether to only use a random subset of the dataset. This is useful for investigating
+# how performance varies with dataset size.
+random_dataset_sampling:
+  use: False
+  num_samples: 1e6
+
+val_ratio: 0.01
+test_ratio: 0.001

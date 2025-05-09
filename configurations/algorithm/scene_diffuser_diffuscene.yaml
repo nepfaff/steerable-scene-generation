@@ -1,0 +1,16 @@
+defaults:
+  - scene_diffuser_base_continous
+
+# Configs from DiffuScene:
+# https://github.com/tangjiapeng/DiffuScene/blob/master/config/text/diffusion_bedrooms_instancond_lat32_v_bert.yaml
+model:
+  dim: 512
+  dim_mults: [1, 1, 1, 1]
+  channels: 62
+  self_condition: true
+  context_dim: 0
+  instanclass_dim: 128
+  seperate_all: true
+  merge_bbox: true
+  modulate_time_context_instanclass: true
+  text_dim: 512

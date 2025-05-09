@@ -1,0 +1,23 @@
+# configuration parsing starts here
+defaults:
+  - experiment: scene_diffusion # experiment yaml file name in configurations/experiments folder [fixme]
+  - dataset: scene # dataset yaml file name in configurations/dataset folder [fixme]
+  - algorithm: "scene_diffuser_mixed_flux_transformer" # algorithm yaml file name in configurations/algorithm folder [fixme]
+  - cluster: null # optional, cluster yaml file name in configurations/cluster folder. Leave null for local compute
+
+debug: false # global debug flag will be passed into configuration of experiment, dataset and algorithm
+
+wandb:
+  entity: TODO # wandb account name / organization name [fixme]
+  project: null # wandb project name; if not provided, defaults to root folder name [fixme]
+  mode: online # set wandb logging to online, offline, disabled or dryrun
+
+resume: null # wandb run id to resume logging and loading checkpoint from
+# wandb run id containing checkpoint or a path to a checkpoint file. Note that all task
+# will load from that checkpoint; i.e. a test stage following a train stage will use
+# these weights rather than using the new weights from the train stage.
+# Alternatively, you can specify a local path to a checkpoint file.
+load: null
+use_best: false # load best instead of latest checkpoint
+checkpoint_version: null # If not null, download the checkpoint with this specific verson
+expiration_days: 90 # delete non top k checkpoints after this many days
