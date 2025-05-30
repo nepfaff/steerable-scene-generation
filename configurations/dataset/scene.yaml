@@ -4,9 +4,9 @@ defaults:
 # Dataset specific attributes
 # Can set `processed_scene_data_path` to the metadata json path if only want to sample.
 # Note that this is only supported for the predict step.
-processed_scene_data_path: "data/breakfast_table_high_clutter_60k_objNum_oneHotUnnormalized"
-model_path_vec_len: 15 # Number of unique objects in table scene + [empty] object. Must be None for fixed scenes.
-max_num_objects_per_scene: 22
+processed_scene_data_path: "nepfaff/steerable-scene-generation-breakfast-table-low-clutter"
+model_path_vec_len: 16 # Number of unique objects in table scene + [empty] object. Must be None for fixed scenes.
+max_num_objects_per_scene: 35
 translation_vec_len: 3
 rotation_parametrization: procrustes
 drake_package_maps: # Optional package map for resolving the mesh paths.

@@ -108,8 +108,18 @@ converting to a Huggingface dataset
 
 ### Our Scene Dataset
 
-We are still working on the dataset release due to its large size. We hope to release it
-as soon as possible.
+Our datasets are available on the [Hugging Face Hub](https://huggingface.co/nepfaff).
+
+We carefully balanced preprocessing to ensure the datasets are ready to use while
+keeping storage requirements reasonable. Specifically:
+- All datasets have only the continuous features normalized (see
+[Dataset Format](#dataset-format)).
+- We provide both individual scene-type datasets and a combined dataset.
+- Each dataset includes [language annotations](scripts/create_language_annotations.py),
+duplicating every scene three times with different annotation types, except for the
+combined dataset, where each scene is assigned a single random annotation type.
+- The datasets are directly compatible with the
+[released checkpoints](#download-model-checkpoints-and-object-models) of the same name.
 
 ## Inference
 
@@ -125,7 +135,8 @@ python scripts/sample_and_render.py load=checkpoint_path \
  dataset.max_num_objects_per_scene=max_num_objects_per_scene
 ```
 `checkpoint_path` is the local path to the checkpoint.
-`dataset_path` is the path to the Huggingface scene dataset directory.
+`dataset_path` is the path to the Huggingface scene dataset directory or the Huggingface
+hub dataset ID.
 `model_path_vec_len` and `max_num_objects_per_scene` are dataset-specific attributes
 and can be found in the dataset metadata.
 See the script docstring for additional details.
