@@ -1,9 +1,11 @@
 import json
+import logging
 import os
 
 from typing import Any, Dict, List, Tuple
 
-from datasets import Dataset
+from datasets import Dataset, load_dataset
+from huggingface_hub import HfApi, hf_hub_download
 from pydrake.all import PackageMap
 
 from steerable_scene_generation.algorithms.common.dataclasses import (
@@ -12,6 +14,8 @@ from steerable_scene_generation.algorithms.common.dataclasses import (
 )
 from steerable_scene_generation.utils.drake_utils import make_package_map
 from steerable_scene_generation.utils.min_max_scaler import MinMaxScaler
+
+logger = logging.getLogger(__name__)
 
 
 def load_hf_dataset_metadata(dataset_path: str) -> Dict:
@@ -39,23 +43,40 @@ def load_hf_dataset_with_metadata(
     dataset_path: str, keep_in_memory: bool = False
 ) -> Tuple[Dataset, Dict]:
     """
-    Load the Hugging Face datasetand metadata.
+    Load the Hugging Face dataset and metadata.
 
     Args:
-        dataset_path (str): Path to the Hugging Face dataset on disk.
+        dataset_path (str): Path to the Hugging Face dataset on disk or a Hugging Face
+            Hub dataset ID.
         keep_in_memory (bool): Whether to copy the dataset in-memory.
 
     Returns:
         Tuple[Dataset, Dict]: A tuple of the loaded dataset and metadata.
     """
-    # Expand user path (e.g., ~).
-    dataset_path = os.path.expanduser(dataset_path)
+    # Check if the path is a Hugging Face Hub dataset ID.
+    if "/" in dataset_path and not os.path.exists(dataset_path):
+        # Load from Hub.
+        hf_dataset = load_dataset(dataset_path, split="train")
 
-    # Load the dataset.
-    hf_dataset = Dataset.load_from_disk(dataset_path, keep_in_memory=keep_in_memory)
-
-    # Load the metadata.
-    metadata = load_hf_dataset_metadata(dataset_path)
+        # Load metadata from the separate file.
+        try:
+            # Try to download the metadata file.
+            metadata_content = hf_hub_download(
+                repo_id=dataset_path,
+                filename="metadata.json",
+                repo_type="dataset",
+                revision="main",
+            )
+            with open(metadata_content, "r") as f:
+                metadata = json.load(f)
+        except Exception as e:
+            logger.error(f"Failed to load metadata from {dataset_path}: {str(e)}")
+            raise
+    else:
+        # Load from local disk.
+        dataset_path = os.path.expanduser(dataset_path)
+        hf_dataset = Dataset.load_from_disk(dataset_path, keep_in_memory=keep_in_memory)
+        metadata = load_hf_dataset_metadata(dataset_path)
 
     return hf_dataset, metadata
 
@@ -214,3 +235,49 @@ def unnormalize_all_scenes(
         desc="Unnormalizing scenes",
     )
     return unormalized_hf_dataset
+
+
+def upload_dataset_to_hub(
+    hf_dataset: Dataset,
+    metadata: Dict[str, Any],
+    hub_dataset_id: str,
+    private: bool = False,
+    token: str | None = None,
+) -> None:
+    """
+    Upload a dataset to the Hugging Face Hub.
+
+    Args:
+        hf_dataset (Dataset): The Hugging Face dataset to upload.
+        metadata (Dict[str, Any]): The dataset metadata.
+        hub_dataset_id (str): The Hugging Face Hub dataset ID (e.g.,
+            "username/dataset-name").
+        private (bool): Whether to make the dataset private.
+        token (str | None): Hugging Face API token. If None, will try to use the token
+            from the environment.
+    """
+    # Initialize the API.
+    api = HfApi(token=token)
+
+    # Try to create the repository if it doesn't exist.
+    api.create_repo(
+        repo_id=hub_dataset_id, repo_type="dataset", private=private, exist_ok=True
+    )
+
+    # Push dataset to hub.
+    hf_dataset.push_to_hub(hub_dataset_id, private=private, token=token)
+
+    # Upload the metadata as a separate file.
+    try:
+        api.upload_file(
+            path_or_fileobj=json.dumps(metadata, indent=4).encode(),
+            path_in_repo="metadata.json",
+            repo_id=hub_dataset_id,
+            repo_type="dataset",
+        )
+        logger.info("Successfully uploaded metadata.json")
+    except Exception as e:
+        logger.error(f"Failed to upload metadata: {str(e)}")
+        raise
+
+    logger.info(f"Dataset uploaded to https://huggingface.co/datasets/{hub_dataset_id}")

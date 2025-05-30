@@ -37,7 +37,12 @@ class SceneDataset(BaseDataset):
         """
         self.cfg = cfg
 
-        if os.path.isdir(cfg.processed_scene_data_path):
+        # Check if the path is a Hugging Face Hub dataset ID.
+        is_hub_dataset = "/" in cfg.processed_scene_data_path and not os.path.exists(
+            cfg.processed_scene_data_path
+        )
+
+        if is_hub_dataset or os.path.isdir(cfg.processed_scene_data_path):
             # Load the dataset.
             hf_dataset, metadata = load_hf_dataset_with_metadata(
                 cfg.processed_scene_data_path, keep_in_memory=cfg.keep_dataset_in_memory

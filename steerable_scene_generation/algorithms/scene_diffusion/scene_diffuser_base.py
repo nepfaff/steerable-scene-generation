@@ -60,6 +60,18 @@ class SceneDiffuserBase(BasePytorchAlgo, ABC):
         else:
             metadata_path = os.path.join(cfg.processed_scene_data_path, "metadata.json")
         metadata_path = os.path.expanduser(metadata_path)
+
+        # Check if the path is a Hugging Face Hub dataset ID
+        if "/" in cfg.processed_scene_data_path and not os.path.exists(metadata_path):
+            # Load metadata from Hub.
+            from huggingface_hub import hf_hub_download
+
+            metadata_path = hf_hub_download(
+                repo_id=cfg.processed_scene_data_path,
+                filename="metadata.json",
+                repo_type="dataset",
+                revision="main",
+            )
         with open(metadata_path, "r") as metadata_file:
             metadata = json.load(metadata_file)
         self.scene_vec_desc = get_scene_vec_description_from_metadata(
